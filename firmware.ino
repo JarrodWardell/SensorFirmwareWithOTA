@@ -11,7 +11,7 @@
 BearSSL::CertStore certStore;
 #include <time.h>
  
-const String FirmwareVer={"0.0"}; 
+const String FirmwareVer={"0.0.1"}; 
 #define URL_fw_Version "/JarrodWardell/SensorFirmwareWithOTA/master/version.txt"
 #define URL_fw_Bin "https://raw.githubusercontent.com/JarrodWardell/SensorFirmwareWithOTA/master/firmware.bin"
 const char* host = "raw.githubusercontent.com";
@@ -62,6 +62,7 @@ void setClock() {
     Serial.print(".");
     now = time(nullptr);
   }
+  Serial.println();
 }
 
 void connect_wifi() {
@@ -124,25 +125,26 @@ unsigned long previousMillis_2 = 0;
 unsigned long previousMillis = 0;        // will store last time update was checked for
 const long interval = 60000;
 const long mini_interval = 1000;
+static int idle_counter=0;
 
 void repeatedCall(){
   unsigned long currentMillis = millis();
   if ((currentMillis - previousMillis) >= interval) {
+    digitalWrite(LED_BUILTIN, HIGH);
     // save the last time you checked for an update
     previousMillis = currentMillis;
     setClock();
     FirmwareUpdate();
+    idle_counter = 0;
+    digitalWrite(LED_BUILTIN, LOW);
   }
 
   if ((currentMillis - previousMillis_2) >= mini_interval) { // this loop looks to be just so something shows in the serial
-    static int idle_counter=0;
     previousMillis_2 = currentMillis;    
     Serial.print(" Active fw version:");
     Serial.println(FirmwareVer);
     Serial.print("Idle Loop....");
     Serial.println(idle_counter++);
-    if(idle_counter%2==0) digitalWrite(LED_BUILTIN, HIGH);
-    else digitalWrite(LED_BUILTIN, LOW);
     if(WiFi.status() == !WL_CONNECTED) connect_wifi();
   }
 }
@@ -156,7 +158,6 @@ void setup() {
   connect_wifi();  
   setClock();
   pinMode(LED_BUILTIN, OUTPUT);
-  
 }
 
 void loop() {
